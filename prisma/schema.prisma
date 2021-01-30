@@ -1,0 +1,108 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// done
+model User {
+  id String @default(cuid()) @id
+  name String
+  email String @unique
+  password String
+  company Company?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+// done*
+model Company {
+  id String @default(cuid()) @id
+  name String
+  address String
+  phone String
+  website String?
+  email String?
+  bin String?
+  accounts Account[]
+  logoUrl String?
+  stampUrl String?
+  clients Client[]
+  docs Doc[]
+  products Product[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  owner User @relation(fields: [ownerId], references: [id])
+  ownerId String
+}
+
+// done
+model Client {
+  id String @default(cuid()) @id
+  iin String
+  companyName String
+  address String?
+  phone String?
+  email String?
+  contactFullName String?
+  contactRole String?
+  note String?
+  ltv Int
+  accounts Account[]
+  docs Doc[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy User @relation(fields: [createdById], references: [id])
+  createdById String
+}
+// done
+model Product {
+  id String @default(cuid()) @id
+  name String
+  unit String?
+  price Int?
+  docs Doc[]
+  ltv Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy User @relation(fields: [createdById], references: [id])
+  createdById String
+}
+// done
+model Doc {
+  id String @default(cuid()) @id
+  sku Int
+  offer Boolean
+  template Boolean @default(false)
+  draft Boolean @default(true)
+  date DateTime?
+  dueDate DateTime?
+  client Client @relation(fields: [clientId], references: [id])
+  clientId String
+  company Company @relation(fields: [companyId], references: [id])
+  companyId String
+  productLine Order[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  createdBy User @relation(fields: [createdById], references: [id])
+  createdById String
+}
+// done
+model Order {
+  id String @default(cuid()) @id
+  product Product
+  qty Int
+}
+// done
+model Account {
+  id String @default(cuid()) @id
+  iban String
+  bic String
+  name String
+  client Client @relation(fields: [clientId], references: [id])
+  clientId String
+}

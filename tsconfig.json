@@ -1,0 +1,14 @@
+{
+  "ts-node": {
+    "transpileOnly": true
+  },
+  "compilerOptions": {
+    "lib": ["esnext"],
+    "baseUrl": ".",
+    "paths": {
+      "src/*": ["src/*"],
+      "src": ["src"]
+    }
+  },
+  "include": ["src/**/*"]
+}
