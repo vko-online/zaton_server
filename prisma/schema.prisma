@@ -51,7 +51,7 @@ model Client {
   contactFullName String?
   contactRole String?
   note String?
-  ltv Int
+  ltv Int?
   accounts Account[]
   docs Doc[]
   createdAt DateTime @default(now())
@@ -64,28 +64,31 @@ model Product {
   id String @default(cuid()) @id
   name String
   unit String?
-  price Int?
+  description String?
+  price Int
   docs Doc[]
-  ltv Int
+  ltv Int?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy User @relation(fields: [createdById], references: [id])
   createdById String
 }
+
 // done
 model Doc {
   id String @default(cuid()) @id
-  sku Int
+  sku Int?
   offer Boolean
   template Boolean @default(false)
   draft Boolean @default(true)
   date DateTime?
   dueDate DateTime?
-  client Client @relation(fields: [clientId], references: [id])
-  clientId String
+  client Client? @relation(fields: [clientId], references: [id])
+  clientId String?
   company Company @relation(fields: [companyId], references: [id])
   companyId String
-  productLine Order[]
+  note String?
+  orders Order[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   createdBy User @relation(fields: [createdById], references: [id])
@@ -103,6 +106,4 @@ model Account {
   iban String
   bic String
   name String
-  client Client @relation(fields: [clientId], references: [id])
-  clientId String
 }

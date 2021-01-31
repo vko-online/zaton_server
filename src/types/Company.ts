@@ -3,13 +3,27 @@ import { IAccountInput } from './Account'
 
 export interface ICompanyInput {
   name: string
-  accounts: IAccountInput[]
+  address: string
+  phone: string
+  website?: string
+  email?: string
+  bin?: string
+  accounts?: IAccountInput[]
 }
+
 export const CompanyInput = inputObjectType({
   name: 'CompanyInput',
   definition (t) {
-    t.string('name')
-    t.list.field('accounts', { type: 'AccountInput' })
+    t.nonNull.string('name')
+    t.nonNull.string('address')
+    t.nonNull.string('phone')
+    t.nullable.string('website')
+    t.nullable.string('email')
+    t.nullable.string('bin')
+    t.list.nullable.field('accounts', {
+      type: 'AccountInput',
+      description: 'Company bank accounts'
+    })
   }
 })
 export const Company = objectType({
@@ -17,11 +31,17 @@ export const Company = objectType({
   definition (t) {
     t.model.id()
     t.model.name()
-    t.model.stamp()
-    t.model.user()
-    t.model.clients({ type: 'Client' })
-    t.model.invoices({ type: 'Invoice' })
-    t.model.products({ type: 'Product' })
-    t.model.accounts({ type: 'Account' })
+    t.model.address()
+    t.model.phone()
+    t.model.website()
+    t.model.email()
+    t.model.bin()
+    t.model.accounts()
+    t.model.clients()
+    t.model.docs()
+    t.model.products()
+    t.model.createdAt()
+    t.model.updatedAt()
+    t.model.owner()
   }
 })

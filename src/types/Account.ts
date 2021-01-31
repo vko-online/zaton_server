@@ -1,18 +1,16 @@
 import { objectType, inputObjectType } from '@nexus/schema'
 
 export interface IAccountInput {
-  bin: string
-  balance?: number
-  name?: string
-  bankName: string
+  iban: string
+  bic: string
+  name: string
 }
 export const AccountInput = inputObjectType({
   name: 'AccountInput',
   definition (t) {
-    t.string('bin')
-    t.int('balance', { required: false })
-    t.string('name', { required: false })
-    t.string('bankName')
+    t.nonNull.string('iban')
+    t.nonNull.string('bic')
+    t.nonNull.string('name')
   }
 })
 
@@ -20,10 +18,8 @@ export const Account = objectType({
   name: 'Account',
   definition (t) {
     t.model.id()
-    t.model.bin()
-    t.model.balance()
+    t.model.iban()
+    t.model.bic()
     t.model.name()
-    t.model.bankName()
-    t.model.company({ type: 'Company' })
   }
 })

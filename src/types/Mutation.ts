@@ -3,23 +3,24 @@ import { sign } from 'jsonwebtoken'
 import { idArg, mutationType, stringArg, arg, booleanArg } from '@nexus/schema'
 import { APP_SECRET, getUserId } from '../utils'
 import { CompanyInput, ICompanyInput } from './Company'
-import { IInvoiceInput } from './Invoice'
+import { IDocInput } from './Doc'
+import { Context } from 'src/context'
 
 export const Mutation = mutationType({
   definition (t) {
+    // #region auth
     t.field('signup', {
       type: 'AuthPayload',
       args: {
-        name: stringArg(),
-        phone: stringArg({ nullable: false }),
-        password: stringArg({ nullable: false })
+        data: arg({ type: 'SignupInput' })
       },
-      resolve: async (_parent, { name, phone, password }, ctx) => {
+      resolve: async (_parent, { data }, ctx) => {
+        const { name, email, password } = data
         const hashedPassword = await hash(password, 10)
         const user = await ctx.prisma.user.create({
           data: {
             name,
-            phone,
+            email,
             password: hashedPassword
           }
         })
@@ -34,17 +35,17 @@ export const Mutation = mutationType({
     t.field('login', {
       type: 'AuthPayload',
       args: {
-        phone: stringArg({ nullable: false }),
-        password: stringArg({ nullable: false })
+        data: arg({ type: 'SigninInput' })
       },
-      resolve: async (_parent, { phone, password }, context) => {
+      resolve: async (_parent, { data }, context) => {
+        const { email, password } = data
         const users = await context.prisma.user.findMany({
           where: {
-            phone
+            email
           }
         })
         if (!users.length)
-          throw new Error(`No user found for phone: ${phone}`)
+          throw new Error(`No user found for email: ${email}`)
 
         const user = users[0]
         const passwordValid = await compare(password, user.password)
@@ -57,29 +58,106 @@ export const Mutation = mutationType({
         }
       }
     })
+    // #endregion
 
-  
-//#region client api
+    // #region company
+
+    t.field('createCompany', {
+      type: 'Company',
+      args: {
+        data: arg({ type: 'CompanyInput'})
+      },
+      resolve: async (_parent, { data }, context: Context) => {
+        const userId = getUserId(context)
+        const existingCompany = await context.prisma.company.findFirst({
+          where: {
+            ownerId: userId
+          }
+        })
+        if (existingCompany) {
+          throw new Error('User can have 1 company')
+        }
+        let accounts
+        if (data.accounts && data.accounts.length) {
+          accounts = {
+            create: data.accounts
+          }
+        }
+        const company = await context.prisma.company.create({
+          data: {
+            ...data,
+            ownerId: userId,
+            accounts
+          }
+        })
+        
+        return company
+      }
+    })
+
+    t.field('updateCompany', {
+      type: 'Company',
+      args: {
+        data: arg({ type: 'CompanyInput'})
+      },
+      resolve: async (_parent, { data }, context: Context) => {
+        const userId = getUserId(context)
+        const existingCompany = await context.prisma.company.findFirst({
+          where: {
+            ownerId: userId
+          }
+        })
+        if (!existingCompany) {
+          throw new Error('User has no company')
+        }
+        const company = await context.prisma.company.update({
+          where: {
+            id: existingCompany.id
+          },
+          data: {
+            address: data.address,
+            bin: data.bin,
+            email: data.email,
+            name: data.name,
+            phone: data.phone,
+            website: data.website
+          }
+        })
+        
+        return company
+      }
+    })
+
+    // #endregion
+
+    // #region client
+
     t.field('createClient', {
       type: 'Client',
       args: {
-        data: arg({ type: 'ClientInput' }),
-        companyId: idArg()
+        data: arg({ type: 'ClientInput' })
       },
-      resolve: async (_parent, { companyId, data }, context) => {
-        // todo: check for company ownership
-        const client = await context.prisma.client.create({
-          data
-        })
-        await context.prisma.company.update({
+      resolve: async (_parent, { data }, context: Context) => {
+        const userId = getUserId(context)
+        const company = await context.prisma.company.findFirst({
           where: {
-            id: companyId
-          },
+            ownerId: userId
+          }
+        })
+        const client = await context.prisma.client.create({
           data: {
-            clients: {
-              connect: {
-                id: client.id
-              }
+            companyName: data.companyName,
+            iin: data.iin,
+            contactFullName: data.contactFullName,
+            contactRole: data.contactRole,
+            email: data.email,
+            note: data.note,
+            address: data.address,
+            phone: data.phone,
+            companyId: company.id,
+            createdById: userId,
+            accounts: {
+              create: data.accounts
             }
           }
         })
@@ -87,117 +165,195 @@ export const Mutation = mutationType({
         return client
       }
     })
-
-    t.field('updateClient', {
-      type: 'Client',
-      args: {
-        data: arg({ type: 'ClientInput' }),
-        clientId: idArg()
-      },
-      resolve: async (_parent, { clientId, data }, context) => {
-        return await context.prisma.client.update({
-          where: {
-            id: clientId
-          },
-          data
-        })
-      }
-    })
-
-
     t.field('deleteClient', {
       type: 'Client',
       args: {
-        clientId: idArg(),
-        companyId: idArg()
+        id: idArg()
       },
-      resolve: async (_parent, { companyId, clientId }, context) => {
-        return context.prisma.company.update({
+      resolve: async (_parent, { id }, context: Context) => {
+        return context.prisma.client.delete({
           where: {
-            id: companyId
-          },
-          data: {
-            clients: {
-              delete: {
-                id: clientId
-              }
-            }
+            id
           }
         })
       }
     })
-//#endregion
+    // t.field('updateClient', {
+    //   type: 'Client',
+    //   args: {
+    //     id: idArg(),
+    //     data: arg({ type: 'ClientInput' })
+    //   },
+    //   resolve: async (_parent, { id, data }, context: Context) => {
+    //     const userId = getUserId(context)
+    //     const existingClient = await context.prisma.client.({
+    //       where: {
+    //         id,
+    //         createdById: userId
+    //       }
+    //     })
 
-//#region invoice api
-  t.field('createInvoice', {
-    type: 'Invoice',
-    args: {
-      data: arg({ type: 'InvoiceInput' })
-    },
-    resolve: async (_parent, { data }: { data: IInvoiceInput }, context) => {
-      const invoice = await context.prisma.invoice.create({
-        data: {
-          company: {
-            connect: {
-              id: data.companyId
-            }
-          },
-          client: {
-            connect: {
-              id: data.clientId
-            }
-          },
-          account: {
-            connect: {
-              id: data.accountId
-            }
-          },
-          draft: true,
-          date: data.date,
-          productLine: {
-            create: data.productLine.map(v => ({
-              product: {
-                connect: {
-                  id: v.product
-                }
-              },
-              qty: v.qty
-            }))
-          }
-        }
-      })
+    //     if (!existingClient) {
+    //       throw new Error('Client not found')
+    //     }
 
-      return invoice
-    }
-  })
-//#endregion
+    //     await context.prisma.client.update({
+    //       where: {
+    //         id
+    //       },
+    //       data: {
+    //         ...data,
+    //         accounts: data
 
-//#region company api
-    t.field('createCompany', {
-      type: 'Company',
-      args: {
-        data: arg({ type: 'CompanyInput' })
-      },
-      resolve: async (_parent, { data }: { data: ICompanyInput }, context) => {
-        const userId = getUserId(context)
-        const company = await context.prisma.company.create({
-          data: {
-            name: data.name,
-            user: {
-              connect: {
-                id: userId
-              }
-            },
-            stamp: 'not implemented',
-            accounts: {
-              create: data.accounts
-            }
-          }
-        })
+    //       }
+    //     })
+        
+    //     return client
+    //   }
+    // })
 
-        return company
-      }
-    })
+    // #endregion
+
+  
+// //#region client api
+//     t.field('createClient', {
+//       type: 'Client',
+//       args: {
+//         data: arg({ type: 'ClientInput' }),
+//         companyId: idArg()
+//       },
+//       resolve: async (_parent, { companyId, data }, context) => {
+//         // todo: check for company ownership
+//         const client = await context.prisma.client.create({
+//           data
+//         })
+//         await context.prisma.company.update({
+//           where: {
+//             id: companyId
+//           },
+//           data: {
+//             clients: {
+//               connect: {
+//                 id: client.id
+//               }
+//             }
+//           }
+//         })
+        
+//         return client
+//       }
+//     })
+
+//     t.field('updateClient', {
+//       type: 'Client',
+//       args: {
+//         data: arg({ type: 'ClientInput' }),
+//         clientId: idArg()
+//       },
+//       resolve: async (_parent, { clientId, data }, context) => {
+//         return await context.prisma.client.update({
+//           where: {
+//             id: clientId
+//           },
+//           data
+//         })
+//       }
+//     })
+
+
+//     t.field('deleteClient', {
+//       type: 'Client',
+//       args: {
+//         clientId: idArg(),
+//         companyId: idArg()
+//       },
+//       resolve: async (_parent, { companyId, clientId }, context) => {
+//         return context.prisma.company.update({
+//           where: {
+//             id: companyId
+//           },
+//           data: {
+//             clients: {
+//               delete: {
+//                 id: clientId
+//               }
+//             }
+//           }
+//         })
+//       }
+//     })
+// //#endregion
+
+// //#region invoice api
+//   t.field('createInvoice', {
+//     type: 'Invoice',
+//     args: {
+//       data: arg({ type: 'InvoiceInput' })
+//     },
+//     resolve: async (_parent, { data }: { data: IDocInput }, context) => {
+//       const invoice = await context.prisma.invoice.create({
+//         data: {
+//           company: {
+//             connect: {
+//               id: data.companyId
+//             }
+//           },
+//           client: {
+//             connect: {
+//               id: data.clientId
+//             }
+//           },
+//           account: {
+//             connect: {
+//               id: data.accountId
+//             }
+//           },
+//           draft: true,
+//           date: data.date,
+//           productLine: {
+//             create: data.productLine.map(v => ({
+//               product: {
+//                 connect: {
+//                   id: v.product
+//                 }
+//               },
+//               qty: v.qty
+//             }))
+//           }
+//         }
+//       })
+
+//       return invoice
+//     }
+//   })
+// //#endregion
+
+// //#region company api
+//     t.field('createCompany', {
+//       type: 'Company',
+//       args: {
+//         data: arg({ type: 'CompanyInput' })
+//       },
+//       resolve: async (_parent, { data }: { data: ICompanyInput }, context) => {
+//         const userId = getUserId(context)
+//         const company = await context.prisma.company.create({
+//           data: {
+//             name: data.name,
+//             user: {
+//               connect: {
+//                 id: userId
+//               }
+//             },
+//             stamp: 'not implemented',
+//             accounts: {
+//               create: data.accounts
+//             }
+//           }
+//         })
+
+//         return company
+//       }
+//     })
   }
 //#endregion
 })
