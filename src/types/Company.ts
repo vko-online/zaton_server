@@ -6,6 +6,7 @@ export interface ICompanyInput {
   address: string
   phone: string
   website?: string
+  currency?: string
   email?: string
   bin?: string
   accounts?: IAccountInput[]
@@ -18,6 +19,7 @@ export const CompanyInput = inputObjectType({
     t.nonNull.string('address')
     t.nonNull.string('phone')
     t.nullable.string('website')
+    t.nullable.string('currency')
     t.nullable.string('email')
     t.nullable.string('bin')
     t.list.nullable.field('accounts', {
@@ -38,6 +40,7 @@ export const Company = objectType({
     t.model.bin()
     t.model.accounts()
     t.model.clients()
+    t.model.currency()
     t.model.docs()
     t.model.products()
     t.model.createdAt()

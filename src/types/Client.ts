@@ -26,7 +26,7 @@ export const ClientInput = inputObjectType({
     t.nullable.string('contactFullName')
     t.nullable.string('contactRole')
     t.nullable.string('note')
-    t.nullable.list.field('accounts', {
+    t.list.field('accounts', {
       type: 'AccountInput',
       description: 'Client bank accounts'
     })

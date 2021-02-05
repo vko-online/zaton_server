@@ -27,6 +27,7 @@ model Company {
   phone String
   website String?
   email String?
+  currency String? @default("₸")
   bin String?
   accounts Account[]
   logoUrl String?
