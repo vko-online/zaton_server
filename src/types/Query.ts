@@ -32,6 +32,18 @@ export const Query = queryType({
       }
     })
 
+    t.field('company', {
+      type: 'Company',
+      resolve: async (_, arg, ctx: Context) => {
+        const userId = getUserId(ctx)
+        return ctx.prisma.company.findFirst({
+          where: {
+            ownerId: userId
+          }
+        })
+      }
+    })
+
     t.list.field('clients', {
       type: 'Client',
       resolve: async (_, args, ctx: Context) => {
