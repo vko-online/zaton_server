@@ -4,6 +4,7 @@
   },
   "compilerOptions": {
     "lib": ["esnext"],
+    "outDir": "dist",
     "baseUrl": ".",
     "paths": {
       "src/*": ["src/*"],

@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node -r tsconfig-paths src/server",
-    "dev": "ts-node-dev -r tsconfig-paths --respawn src/server",
+    "start": "node dist/server",
+    "dev": "ts-node -r tsconfig-paths src/server",
+    "watch": "ts-node-dev -r tsconfig-paths --respawn src/server",
     "generate": "ts-node -r tsconfig-paths src/schema",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc --project tsconfig.json"
   },
   "keywords": [],
   "author": "",
