@@ -26,7 +26,7 @@ export const Product = objectType({
     t.model.price()
     t.model.unit()
     t.model.ltv()
-    t.model.docs()
+    t.model.docs({ pagination: false, filtering: false })
     t.model.createdAt()
     t.model.updatedAt()
     t.model.createdBy()

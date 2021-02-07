@@ -22,10 +22,19 @@ export const CompanyInput = inputObjectType({
     t.nullable.string('currency')
     t.nullable.string('email')
     t.nullable.string('bin')
-    t.list.nullable.field('accounts', {
-      type: 'AccountInput',
-      description: 'Company bank accounts'
-    })
+  }
+})
+export const CompanyUpdateInput = inputObjectType({
+  name: 'CompanyUpdateInput',
+  definition (t) {
+    t.nullable.string('name')
+    t.nullable.string('address')
+    t.nullable.string('phone')
+    t.nullable.string('website')
+    t.nullable.string('currency')
+    t.nullable.string('email')
+    t.nullable.string('bin')
+    t.nullable.string('currency')
   }
 })
 export const Company = objectType({
@@ -38,10 +47,10 @@ export const Company = objectType({
     t.model.website()
     t.model.email()
     t.model.bin()
-    t.model.accounts()
-    t.model.clients()
+    t.model.accounts({ pagination: false, filtering: false })
+    t.model.clients({ pagination: true, filtering: true })
     t.model.currency()
-    t.model.docs()
+    t.model.docs({ pagination: false, filtering: false })
     t.model.products()
     t.model.createdAt()
     t.model.updatedAt()

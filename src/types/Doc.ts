@@ -1,4 +1,5 @@
 import { inputObjectType, objectType } from '@nexus/schema'
+import { Context } from 'src/context'
 import { IOrderInput } from './Order'
 
 export interface IDocInput {
@@ -38,9 +39,32 @@ export const Doc = objectType({
     t.model.client()
     t.model.company()
     t.model.note()
-    t.model.orders()
+    t.model.orders({ pagination: false, filtering: false })
     t.model.createdAt()
     t.model.updatedAt()
     t.model.createdBy()
+    t.field('total', {
+      type: 'Int',
+      resolve: async (doc, _, context: Context) => {
+        const docs = await context.prisma.doc.findMany({
+          where: {
+            id: doc.id
+          },
+          include: {
+            orders: {
+              include: {
+                product: {
+                  select: {
+                    price: true
+                  }
+                }
+              }
+            }
+          }
+        })
+        const orders = docs.map(v => v.orders).flat()
+        return orders.reduce((a, v) => a + v.product.price * v.qty, 0)
+      }
+    })
   }
 })

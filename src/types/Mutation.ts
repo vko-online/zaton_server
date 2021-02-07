@@ -77,17 +77,10 @@ export const Mutation = mutationType({
         if (existingCompany) {
           throw new Error('User can have 1 company')
         }
-        let accounts
-        if (data.accounts && data.accounts.length) {
-          accounts = {
-            create: data.accounts
-          }
-        }
         const company = await context.prisma.company.create({
           data: {
             ...data,
-            ownerId: userId,
-            accounts
+            ownerId: userId
           }
         })
         
@@ -98,7 +91,7 @@ export const Mutation = mutationType({
     t.field('updateCompany', {
       type: 'Company',
       args: {
-        data: arg({ type: 'CompanyInput'})
+        data: arg({ type: 'CompanyUpdateInput'})
       },
       resolve: async (_parent, { data }, context: Context) => {
         const userId = getUserId(context)

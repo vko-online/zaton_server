@@ -47,10 +47,10 @@ export const Client = objectType({
     t.model.note()
     t.field('ltv', {
       type: 'Int',
-      resolve: async (_parent, _, context: Context) => {
+      resolve: async (client, _, context: Context) => {
         const docs = await context.prisma.doc.findMany({
           where: {
-            clientId: _parent.id
+            clientId: client.id
           },
           include: {
             orders: {
@@ -68,8 +68,8 @@ export const Client = objectType({
         return orders.reduce((a, v) => a + v.product.price * v.qty, 0)
       }
     })
-    t.model.accounts()
-    t.model.docs()
+    t.model.accounts({ pagination: false, filtering: false })
+    t.model.docs({ pagination: false, filtering: false })
     t.model.createdAt()
     t.model.updatedAt()
     t.model.createdBy()
