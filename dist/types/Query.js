@@ -86,7 +86,7 @@ exports.Query = schema_1.queryType({
                 });
             }); }
         });
-        t.list.field('clients', {
+        t.nonNull.list.nonNull.field('clients', {
             type: 'Client',
             resolve: function (_, args, ctx) { return __awaiter(_this, void 0, void 0, function () {
                 var userId;
@@ -100,6 +100,51 @@ exports.Query = schema_1.queryType({
                 });
             }); }
         });
+        t.nonNull.list.nonNull.field('products', {
+            type: 'Product',
+            resolve: function (_, args, ctx) { return __awaiter(_this, void 0, void 0, function () {
+                var userId, company;
+                return __generator(this, function (_a) {
+                    switch (_a.label) {
+                        case 0:
+                            userId = utils_1.getUserId(ctx);
+                            return [4 /*yield*/, ctx.prisma.company.findFirst({
+                                    where: {
+                                        ownerId: userId
+                                    }
+                                })];
+                        case 1:
+                            company = _a.sent();
+                            return [2 /*return*/, ctx.prisma.product.findMany({
+                                    where: {
+                                        companyId: company.id
+                                    }
+                                })];
+                    }
+                });
+            }); }
+        });
+        t.field('product', {
+            type: 'Product',
+            args: {
+                id: schema_1.nonNull(schema_1.idArg())
+            },
+            resolve: function (_, _a, ctx) {
+                var id = _a.id;
+                return __awaiter(_this, void 0, void 0, function () {
+                    return __generator(this, function (_b) {
+                        return [2 /*return*/, ctx.prisma.product.findFirst({
+                                where: {
+                                    id: id
+                                },
+                                include: {
+                                    docs: true
+                                }
+                            })];
+                    });
+                });
+            }
+        });
         t.field('client', {
             type: 'Client',
             args: {
@@ -108,13 +153,10 @@ exports.Query = schema_1.queryType({
             resolve: function (_, _a, ctx) {
                 var id = _a.id;
                 return __awaiter(_this, void 0, void 0, function () {
-                    var userId;
                     return __generator(this, function (_b) {
-                        userId = utils_1.getUserId(ctx);
                         return [2 /*return*/, ctx.prisma.client.findFirst({
                                 where: {
-                                    id: id,
-                                    createdById: userId
+                                    id: id
                                 },
                                 include: {
                                     accounts: true,

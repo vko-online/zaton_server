@@ -60,6 +60,37 @@ export const Mutation = mutationType({
     })
     // #endregion
 
+    // #region product
+
+    t.field('createProduct', {
+      type: 'Product',
+      args: {
+        data: arg({ type: 'ProductInput'})
+      },
+      resolve: async (_parent, { data }, context: Context) => {
+        const userId = getUserId(context)
+        const company = await context.prisma.company.findFirst({
+          where: {
+            ownerId: userId
+          }
+        })
+        const product = await context.prisma.product.create({
+          data: {
+            createdById: userId,
+            companyId: company.id,
+            name: data.name,
+            price: data.price,
+            description: data.description,
+            unit: data.unit
+          }
+        })
+        
+        return product
+      }
+    })
+
+    // #endregion
+
     // #region company
 
     t.field('createCompany', {

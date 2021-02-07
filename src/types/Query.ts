@@ -44,7 +44,7 @@ export const Query = queryType({
       }
     })
 
-    t.list.field('clients', {
+    t.nonNull.list.nonNull.field('clients', {
       type: 'Client',
       resolve: async (_, args, ctx: Context) => {
         const userId = getUserId(ctx)
@@ -56,17 +56,49 @@ export const Query = queryType({
       }
     })
 
+    t.nonNull.list.nonNull.field('products', {
+      type: 'Product',
+      resolve: async (_, args, ctx: Context) => {
+        const userId = getUserId(ctx)
+        const company = await ctx.prisma.company.findFirst({
+          where: {
+            ownerId: userId
+          }
+        })
+        return ctx.prisma.product.findMany({
+          where: {
+            companyId: company.id
+          }
+        })
+      }
+    })
+
+    t.field('product', {
+      type: 'Product',
+      args: {
+        id: nonNull(idArg())
+      },
+      resolve: async (_, { id }, ctx: Context) => {
+        return ctx.prisma.product.findFirst({
+          where: {
+            id
+          },
+          include: {
+            docs: true
+          }
+        })
+      }
+    })
+
     t.field('client', {
       type: 'Client',
       args: {
         id: nonNull(idArg())
       },
       resolve: async (_, { id }, ctx: Context) => {
-        const userId = getUserId(ctx)
         return ctx.prisma.client.findFirst({
           where: {
-            id,
-            createdById: userId
+            id
           },
           include: {
             accounts: true,

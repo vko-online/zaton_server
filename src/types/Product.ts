@@ -1,4 +1,5 @@
 import { inputObjectType, objectType } from '@nexus/schema'
+import { Context } from 'src/context'
 
 export interface IProductInput {
   name: string
@@ -13,7 +14,6 @@ export const ProductInput = inputObjectType({
     t.nonNull.string('name')
     t.nonNull.int('price')
     t.nullable.string('unit')
-    t.nullable.int('ltv')
     t.nullable.string('description')
   }
 })
@@ -24,8 +24,31 @@ export const Product = objectType({
     t.model.id()
     t.model.name()
     t.model.price()
+    t.model.description()
     t.model.unit()
-    t.model.ltv()
+    t.field('ltv', {
+      type: 'Int',
+      resolve: async (product, _, context: Context) => {
+        const docs = await context.prisma.doc.findMany({
+          where: {
+            productId: product.id
+          },
+          include: {
+            orders: {
+              include: {
+                product: {
+                  select: {
+                    price: true
+                  }
+                }
+              }
+            }
+          }
+        })
+        const orders = docs.map(v => v.orders).flat()
+        return orders.reduce((a, v) => a + v.product.price * v.qty, 0)
+      }
+    })
     t.model.docs({ pagination: false, filtering: false })
     t.model.createdAt()
     t.model.updatedAt()

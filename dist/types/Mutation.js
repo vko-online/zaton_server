@@ -128,6 +128,46 @@ exports.Mutation = schema_1.mutationType({
             }
         });
         // #endregion
+        // #region product
+        t.field('createProduct', {
+            type: 'Product',
+            args: {
+                data: schema_1.arg({ type: 'ProductInput' })
+            },
+            resolve: function (_parent, _a, context) {
+                var data = _a.data;
+                return __awaiter(_this, void 0, void 0, function () {
+                    var userId, company, product;
+                    return __generator(this, function (_b) {
+                        switch (_b.label) {
+                            case 0:
+                                userId = utils_1.getUserId(context);
+                                return [4 /*yield*/, context.prisma.company.findFirst({
+                                        where: {
+                                            ownerId: userId
+                                        }
+                                    })];
+                            case 1:
+                                company = _b.sent();
+                                return [4 /*yield*/, context.prisma.product.create({
+                                        data: {
+                                            createdById: userId,
+                                            companyId: company.id,
+                                            name: data.name,
+                                            price: data.price,
+                                            description: data.description,
+                                            unit: data.unit
+                                        }
+                                    })];
+                            case 2:
+                                product = _b.sent();
+                                return [2 /*return*/, product];
+                        }
+                    });
+                });
+            }
+        });
+        // #endregion
         // #region company
         t.field('createCompany', {
             type: 'Company',
